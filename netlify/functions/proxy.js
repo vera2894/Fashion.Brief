@@ -3,25 +3,56 @@ exports.handler = async (event) => {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': process.env.ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-      'anthropic-beta': 'interleaved-thinking-2025-01-31'
+  const apiKey = process.env.GEMINI_API_KEY;
+  const body = JSON.parse(event.body);
+
+  // Estrai system prompt e messaggio utente dal formato Anthropic
+  const systemPrompt = body.system || '';
+  const userMessage = body.messages?.[0]?.content || '';
+
+  const geminiBody = {
+    system_instruction: { parts: [{ text: systemPrompt }] },
+    contents: [{ role: 'user', parts: [{ text: userMessage }] }],
+    generationConfig: {
+      temperature: 0.7,
+      maxOutputTokens: 1500,
     },
-    body: event.body
-  });
+    tools: [{ google_search: {} }]
+  };
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(geminiBody)
+    }
+  );
 
   const data = await response.json();
 
+  // Estrai il testo dalla risposta Gemini
+  let text = '';
+  try {
+    text = data.candidates?.[0]?.content?.parts
+      ?.filter(p => p.text)
+      ?.map(p => p.text)
+      ?.join('') || '';
+  } catch (e) {
+    text = '';
+  }
+
+  // Restituisci nel formato che si aspetta index.html
+  const anthropicStyleResponse = {
+    content: [{ type: 'text', text }]
+  };
+
   return {
-    statusCode: response.status,
+    statusCode: 200,
     headers: {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*'
     },
-    body: JSON.stringify(data)
+    body: JSON.stringify(anthropicStyleResponse)
   };
 };
