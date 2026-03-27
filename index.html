@@ -412,10 +412,7 @@ async function generateReport() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1500,
         system: buildSystemPrompt(activeCats),
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
         messages: [{ role: 'user', content: `Genera il briefing per oggi, ${formatDate(new Date())}. Usa web search per trovare notizie reali degli ultimi giorni.` }]
       })
     });
