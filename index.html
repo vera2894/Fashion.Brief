@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0A0A0A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Briefing Moda">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.svg">
+<title>Fashion Briefing</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0A0A0A;
+    --paper: #F5F0E8;
+    --paper2: #EDE8DE;
+    --accent: #C8402A;
+    --accent2: #1A3A5C;
+    --muted: #6B6560;
+    --card-bg: #FDFAF4;
+    --border: rgba(10,10,10,0.12);
+    --sans: 'DM Sans', sans-serif;
+    --serif: 'Playfair Display', serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { font-family: var(--sans); background: var(--paper); color: var(--ink); min-height: 100vh; max-width: 430px; margin: 0 auto; }
+
+  .header { background: var(--ink); color: var(--paper); padding: 20px 20px 0; position: sticky; top: 0; z-index: 100; }
+  .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+  .logo { font-family: var(--serif); font-size: 22px; font-weight: 700; letter-spacing: -0.5px; line-height: 1; }
+  .logo span { color: var(--accent); }
+  .header-date { font-size: 11px; font-weight: 300; color: rgba(245,240,232,0.6); text-transform: uppercase; letter-spacing: 1.5px; text-align: right; }
+  .header-subtitle { font-size: 11px; font-weight: 300; color: rgba(245,240,232,0.5); letter-spacing: 0.5px; padding-bottom: 14px; }
+  .nav { background: var(--ink); display: flex; border-top: 1px solid rgba(255,255,255,0.08); }
+  .nav-btn { flex: 1; padding: 10px 8px; font-family: var(--sans); font-size: 11px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; color: rgba(245,240,232,0.45); background: none; border: none; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+  .nav-btn.active { color: var(--paper); border-bottom-color: var(--accent); }
+
+  .progress-bar-wrap { height: 2px; background: var(--border); display: none; }
+  .progress-bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.4s ease; }
+  .status-msg { text-align: center; padding: 10px 20px; font-size: 12px; color: var(--muted); font-style: italic; display: none; border-bottom: 1px solid var(--border); }
+
+  .main { padding: 0 0 100px; }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .today-hero { background: var(--paper2); border-bottom: 1px solid var(--border); padding: 20px 20px 16px; }
+  .today-hero-label { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); margin-bottom: 8px; }
+  .today-hero-title { font-family: var(--serif); font-size: 26px; font-weight: 700; line-height: 1.2; color: var(--ink); margin-bottom: 12px; }
+  .active-cats { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
+
+  .generate-btn { width: 100%; padding: 14px; background: var(--accent); color: #fff; border: none; border-radius: 6px; font-family: var(--sans); font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.2s, transform 0.1s; }
+  .generate-btn:active { transform: scale(0.98); opacity: 0.9; }
+  .generate-btn:disabled { opacity: 0.6; cursor: default; }
+  .generate-btn .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; display: none; }
+  .generate-btn.loading .spinner { display: block; }
+  .generate-btn.loading .btn-icon { display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .news-list { padding: 16px 0 0; }
+  .news-card { background: var(--card-bg); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 8px; padding: 16px 20px; opacity: 0; transform: translateY(12px); transition: opacity 0.4s ease, transform 0.4s ease; }
+  .news-card.visible { opacity: 1; transform: translateY(0); }
+  .news-number { font-family: var(--serif); font-size: 11px; color: var(--muted); margin-bottom: 6px; letter-spacing: 1px; }
+  .news-title { font-family: var(--serif); font-size: 17px; font-weight: 600; line-height: 1.3; color: var(--ink); margin-bottom: 8px; }
+  .news-tag { display: inline-block; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; padding: 3px 8px; border-radius: 3px; margin-bottom: 10px; }
+  .news-body { font-size: 14px; font-weight: 300; line-height: 1.65; color: #2A2A2A; }
+
+  .tag-ecommerce { background: #D5F5E3; color: #0B4D2A; }
+  .tag-tech { background: #D0E4F7; color: #0D2B4A; }
+  .tag-trend { background: #EDE7F6; color: #3A1A6B; }
+  .tag-competitor { background: #FAE5D3; color: #6B2D00; }
+  .tag-analytics { background: #FEF9C3; color: #713F12; }
+  .tag-ux { background: #FCE7F3; color: #831843; }
+  .tag-paid { background: #DBEAFE; color: #1E3A8A; }
+  .tag-supply { background: #D1FAE5; color: #064E3B; }
+  .tag-international { background: #E0E7FF; color: #3730A3; }
+  .tag-ai { background: #F3E8FF; color: #581C87; }
+
+  .empty-state { text-align: center; padding: 48px 32px; color: var(--muted); }
+  .empty-state .icon { font-size: 40px; margin-bottom: 16px; opacity: 0.5; }
+  .empty-state p { font-size: 14px; font-weight: 300; line-height: 1.6; }
+
+  .history-search { padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--paper2); }
+  .history-search input { width: 100%; padding: 9px 14px; border: 1px solid var(--border); border-radius: 6px; background: var(--card-bg); font-family: var(--sans); font-size: 13px; color: var(--ink); outline: none; }
+  .history-list { padding: 8px 0; }
+  .history-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s; }
+  .history-item:active { background: var(--paper2); }
+  .history-item-date { font-family: var(--serif); font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+  .history-item-pills { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 3px; }
+  .history-item-count { font-size: 12px; color: var(--muted); font-weight: 300; }
+  .history-item-arrow { color: var(--muted); font-size: 18px; flex-shrink: 0; margin-left: 12px; }
+
+  .settings-section { padding: 20px; border-bottom: 1px solid var(--border); }
+  .settings-label { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); margin-bottom: 12px; }
+  .cat-group-title { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 1.5px; color: var(--accent); margin: 16px 0 6px; }
+  .cat-group-title:first-of-type { margin-top: 0; }
+  .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 14px; gap: 12px; }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-row-label { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+  .setting-row-sub { font-size: 11px; color: var(--muted); font-weight: 300; line-height: 1.4; }
+
+  .toggle { width: 44px; height: 24px; background: #ccc; border-radius: 12px; position: relative; cursor: pointer; transition: background 0.2s; border: none; flex-shrink: 0; }
+  .toggle::after { content: ''; position: absolute; width: 20px; height: 20px; background: #fff; border-radius: 50%; top: 2px; left: 2px; transition: transform 0.2s; }
+  .toggle.on { background: var(--accent2); }
+  .toggle.on::after { transform: translateX(20px); }
+
+  .notify-btn { width: 100%; padding: 12px; background: var(--accent2); color: #fff; border: none; border-radius: 6px; font-family: var(--sans); font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 12px; }
+  .notify-btn:active { opacity: 0.8; }
+  .time-input { font-family: var(--sans); font-size: 14px; border: 1px solid var(--border); padding: 6px 10px; border-radius: 6px; background: var(--paper); color: var(--ink); }
+
+  .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--ink); color: var(--paper); padding: 10px 20px; border-radius: 20px; font-size: 13px; opacity: 0; transition: all 0.3s; pointer-events: none; z-index: 999; white-space: nowrap; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: var(--ink); display: flex; border-top: 1px solid rgba(255,255,255,0.1); z-index: 100; }
+  .bottom-nav-btn { flex: 1; padding: 12px 8px 14px; display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; color: rgba(245,240,232,0.4); font-family: var(--sans); font-size: 10px; font-weight: 400; letter-spacing: 0.3px; text-transform: uppercase; transition: color 0.2s; }
+  .bottom-nav-btn.active { color: var(--paper); }
+  .bottom-nav-btn svg { width: 22px; height: 22px; }
+
+  .streaming-card { background: var(--card-bg); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 8px; padding: 16px 20px; }
+  .streaming-text { font-size: 13px; font-weight: 300; line-height: 1.7; color: var(--muted); font-style: italic; }
+  .cursor { display: inline-block; width: 2px; height: 14px; background: var(--accent); margin-left: 2px; animation: blink 0.8s step-end infinite; vertical-align: middle; }
+  @keyframes blink { 50% { opacity: 0; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="logo">Fashion<span>.</span>Brief</div>
+    <div class="header-date" id="headerDate">— —</div>
+  </div>
+  <div class="header-subtitle">Il tuo briefing quotidiano · Moda &amp; Ecommerce</div>
+  <div class="nav">
+    <button class="nav-btn active" id="nav-today" onclick="switchView('today')">Oggi</button>
+    <button class="nav-btn" id="nav-history" onclick="switchView('history')">Archivio</button>
+    <button class="nav-btn" id="nav-settings" onclick="switchView('settings')">Impostazioni</button>
+  </div>
+</div>
+
+<div class="progress-bar-wrap" id="progressWrap"><div class="progress-bar-fill" id="progressFill"></div></div>
+<div class="status-msg" id="statusMsg"></div>
+
+<div class="main">
+
+  <div class="view active" id="view-today">
+    <div class="today-hero">
+      <div class="today-hero-label">Edizione di oggi</div>
+      <div class="today-hero-title" id="heroTitle">Genera il tuo briefing</div>
+      <div class="active-cats" id="activeCatPills"></div>
+      <button class="generate-btn" id="generateBtn" onclick="generateReport()">
+        <span class="btn-icon">✦</span>
+        <div class="spinner"></div>
+        <span id="btnText">Genera report di oggi</span>
+      </button>
+    </div>
+    <div class="news-list" id="newsList">
+      <div class="empty-state">
+        <div class="icon">📰</div>
+        <p>Premi il pulsante per generare<br>il briefing aggiornato di oggi</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="view" id="view-history">
+    <div class="history-search">
+      <input type="text" placeholder="🔍  Cerca nei report…" id="historySearchInput" oninput="renderHistory()">
+    </div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+  <div class="view" id="view-settings">
+    <div class="settings-section">
+      <div class="settings-label">Notifiche push</div>
+      <div class="setting-row">
+        <span>Briefing mattutino</span>
+        <button class="toggle" id="notifToggle" onclick="togglePref(this,'notifOn')"></button>
+      </div>
+      <div class="setting-row">
+        <span>Orario</span>
+        <input type="time" class="time-input" id="notifTime" value="08:00" onchange="savePref('notifTime',this.value)">
+      </div>
+      <button class="notify-btn" onclick="requestNotifications()">🔔 Attiva notifiche</button>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-label">Aree tematiche nel report</div>
+
+      <div class="cat-group-title">Mercato &amp; Prodotto</div>
+      <div class="setting-row">
+        <div class="setting-row-label"><span>Ecommerce &amp; digital retail</span><span class="setting-row-sub">Piattaforme, marketplace, vendite online</span></div>
+        <button class="toggle on" data-cat="ecommerce" onclick="toggleCat(this)"></button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-row-label"><span>Trend &amp; nuovi brand</span><span class="setting-row-sub">Brand emergenti, collezioni, consumer behavior</span></div>
+        <button class="toggle on" data-cat="trend" onclick="toggleCat(this)"></button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-row-label"><span>Lusso &amp; competitor</span><span class="setting-row-sub">Grandi player, acquisizioni, strategie</span></div>
+        <button class="toggle on" data-cat="competitor" onclick="toggleCat(this)"></button>
+      </div>
+
+      <div class="cat-group-title">Tecnologia</div>
+      <div class="setting-row">
+        <div class="setting-row-label"><span>Tecnologia &amp; piattaforme</span><span class="setting-row-sub">Shopify, Salesforce, infrastruttura</span></div>
+        <button class="toggle on" data-cat="tech" onclick="toggleCat(this)"></button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-row-label"><span>AI applicata all'ecommerce</span><span class="setting-row-sub">Personalizzazione, visual search, generative AI</span></div>
+        <button class="toggle" data-cat="ai" onclick="toggleCat(this)"></button>
+      </div>
+
+      <div class="cat-group-title">Formazione &amp; Crescita</div>
+      <div class="setting-row">
+        <div class="setting-row-label"><span>Analytics &amp; data</span><span class="setting-row-sub">GA4, LTV, metriche, business intelligence</span></div>
+        <button class="toggle" data-cat="analytics" onclick="toggleCat(this)"></button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-row-label"><span>UX &amp; conversion rate</span><span class="setting-row-sub">CRO, A/B test, checkout optimization</span></div>
+        <button class="toggle" data-cat="ux" onclick="toggleCat(this)"></button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-row-label"><span>Paid media &amp; performance</span><span class="setting-row-sub">Meta Ads, Google, ROAS, CAC</span></div>
+        <button class="toggle" data-cat="paid" onclick="toggleCat(this)"></button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-row-label"><span>Supply chain &amp; logistica</span><span class="setting-row-sub">Resi, magazzino, delivery moda</span></div>
+        <button class="toggle" data-cat="supply" onclick="toggleCat(this)"></button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-row-label"><span>Internazionalizzazione</span><span class="setting-row-sub">Mercati globali, cross-border, DTC</span></div>
+        <button class="toggle" data-cat="international" onclick="toggleCat(this)"></button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-label">Archivio</div>
+      <div class="setting-row"><span>Report salvati</span><span style="color:var(--muted);font-size:13px" id="savedCount">0</span></div>
+      <div class="setting-row"><span>Conservazione</span><span style="color:var(--muted);font-size:13px">Illimitata</span></div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-label">App</div>
+      <div class="setting-row"><span>Versione</span><span style="color:var(--muted);font-size:13px">2.0.0</span></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="bottom-nav">
+  <button class="bottom-nav-btn active" id="bnav-today" onclick="switchView('today')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    Oggi
+  </button>
+  <button class="bottom-nav-btn" id="bnav-history" onclick="switchView('history')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg>
+    Archivio
+  </button>
+  <button class="bottom-nav-btn" id="bnav-settings" onclick="switchView('settings')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Impostazioni
+  </button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const ALL_CATS = {
+  ecommerce:     { label: 'Ecommerce',      desc: 'Ecommerce & digital retail moda: piattaforme, marketplace, strategie di vendita online nel settore moda.' },
+  trend:         { label: 'Trend',          desc: 'Trend e nuovi brand moda: brand emergenti, collezioni, cambiamenti nei comportamenti d\'acquisto.' },
+  competitor:    { label: 'Competitor',     desc: 'Lusso & competitor: strategie dei grandi player, acquisizioni, mercato lusso e fast fashion.' },
+  tech:          { label: 'Tecnologia',     desc: 'Tecnologia & piattaforme ecommerce: Shopify, Salesforce Commerce, headless, infrastruttura tech.' },
+  ai:            { label: 'AI',             desc: 'AI applicata all\'ecommerce moda: personalizzazione, visual search, sizing advisor, generative AI.' },
+  analytics:     { label: 'Analytics',      desc: 'Analytics & data per ecommerce moda: GA4, LTV, cohort analysis, KPI rilevanti.' },
+  ux:            { label: 'UX / CRO',       desc: 'UX & conversion rate optimization: A/B test, checkout, usabilità mobile, heatmap.' },
+  paid:          { label: 'Paid media',     desc: 'Paid media & performance marketing: Meta Ads, Google Shopping, ROAS, CAC, acquisizione.' },
+  supply:        { label: 'Supply chain',   desc: 'Supply chain & logistica moda: gestione resi, magazzino, tempi di consegna, stagionalità.' },
+  international: { label: 'Internazionale', desc: 'Internazionalizzazione ecommerce moda: espansione mercati, cross-border, DTC globale.' },
+};
+const DEFAULT_ON = ['ecommerce','trend','competitor','tech'];
+
+function loadPrefs() {
+  try { return JSON.parse(localStorage.getItem('fb_prefs') || 'null') || { cats: [...DEFAULT_ON], notifOn: false, notifTime: '08:00' }; }
+  catch { return { cats: [...DEFAULT_ON], notifOn: false, notifTime: '08:00' }; }
+}
+function savePrefs(p) { localStorage.setItem('fb_prefs', JSON.stringify(p)); }
+function getActiveCats() { return loadPrefs().cats || DEFAULT_ON; }
+function savePref(key, val) { const p = loadPrefs(); p[key] = val; savePrefs(p); }
+function togglePref(btn, key) { btn.classList.toggle('on'); savePref(key, btn.classList.contains('on')); }
+
+function toggleCat(btn) {
+  btn.classList.toggle('on');
+  const cat = btn.dataset.cat;
+  const p = loadPrefs();
+  if (btn.classList.contains('on')) { if (!p.cats.includes(cat)) p.cats.push(cat); }
+  else { p.cats = p.cats.filter(c => c !== cat); }
+  savePrefs(p);
+  renderActivePills();
+  showToast(btn.classList.contains('on') ? `✦ ${ALL_CATS[cat].label} aggiunta` : `${ALL_CATS[cat].label} rimossa`);
+}
+
+function initSettings() {
+  const p = loadPrefs();
+  document.querySelectorAll('[data-cat]').forEach(btn => {
+    btn.classList.toggle('on', p.cats.includes(btn.dataset.cat));
+  });
+  if (p.notifOn) document.getElementById('notifToggle').classList.add('on');
+  document.getElementById('notifTime').value = p.notifTime || '08:00';
+}
+
+function renderActivePills() {
+  const cats = getActiveCats();
+  document.getElementById('activeCatPills').innerHTML = cats.map(c =>
+    `<span class="news-tag tag-${c}" style="font-size:10px">${ALL_CATS[c]?.label || c}</span>`
+  ).join('');
+}
+
+function formatDate(d) {
+  const days = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+  const months = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+  return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+function shortDate(d) { return d.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'2-digit'}); }
+
+const now = new Date();
+document.getElementById('headerDate').textContent = formatDate(now);
+document.getElementById('heroTitle').textContent = `Briefing — ${now.toLocaleDateString('it-IT',{day:'numeric',month:'long'})}`;
+
+function getHistory() { try { return JSON.parse(localStorage.getItem('fb_history')||'[]'); } catch { return []; } }
+function saveToHistory(report, cats) {
+  const h = getHistory();
+  const key = shortDate(new Date());
+  const entry = { date: key, full: formatDate(new Date()), data: report, cats };
+  const idx = h.findIndex(x => x.date === key);
+  if (idx >= 0) h[idx] = entry; else h.unshift(entry);
+  localStorage.setItem('fb_history', JSON.stringify(h));
+  document.getElementById('savedCount').textContent = h.length;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+function switchView(v) {
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn, .bottom-nav-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.getElementById('nav-'+v)?.classList.add('active');
+  document.getElementById('bnav-'+v)?.classList.add('active');
+  if (v === 'history') renderHistory();
+  if (v === 'settings') document.getElementById('savedCount').textContent = getHistory().length;
+}
+
+function renderNews(notizie, container) {
+  container.innerHTML = '';
+  notizie.forEach((item, i) => {
+    const cat = item.categoria || 'ecommerce';
+    const card = document.createElement('div');
+    card.className = 'news-card';
+    card.innerHTML = `
+      <div class="news-number">N° ${String(i+1).padStart(2,'0')}</div>
+      <div class="news-title">${item.titolo}</div>
+      <span class="news-tag tag-${cat}">${ALL_CATS[cat]?.label || cat}</span>
+      <div class="news-body">${item.sintesi}</div>`;
+    container.appendChild(card);
+    setTimeout(() => card.classList.add('visible'), 80 * i);
+  });
+}
+
+function buildSystemPrompt(activeCats) {
+  const catDescs = activeCats.map(c => `- ${ALL_CATS[c]?.desc || c}`).join('\n');
+  const catKeys = activeCats.join('|');
+  return `Sei un assistente specializzato in moda, ecommerce e digital retail.
+Genera un briefing giornaliero per una responsabile ecommerce di un'azienda di moda italiana (meno di 1 anno di esperienza nel ruolo).
+
+Genera tra 5 e 8 notizie recenti, coprendo SOLO queste aree attive:
+${catDescs}
+
+Per ogni notizia restituisci questo JSON:
+{"titolo":"...","categoria":"${catKeys}","sintesi":"2-3 frasi: cosa è successo, contesto e impatto pratico per l'ecommerce moda."}
+
+Rispondi SOLO con: {"notizie":[...]} — niente testo aggiuntivo, niente backtick.`;
+}
+
+async function generateReport() {
+  const activeCats = getActiveCats();
+  if (!activeCats.length) { showToast('Attiva almeno una categoria!'); return; }
+
+  const btn = document.getElementById('generateBtn');
+  const btnText = document.getElementById('btnText');
+  const newsList = document.getElementById('newsList');
+  const progressWrap = document.getElementById('progressWrap');
+  const progressFill = document.getElementById('progressFill');
+  const statusMsg = document.getElementById('statusMsg');
+
+  btn.disabled = true; btn.classList.add('loading');
+  btnText.textContent = 'Ricerca in corso…';
+  progressWrap.style.display = 'block';
+  statusMsg.style.display = 'block';
+  statusMsg.textContent = '✦ Analisi delle fonti…';
+  newsList.innerHTML = '<div class="streaming-card"><div class="streaming-text">Ricerca notizie<span class="cursor"></span></div></div>';
+
+  let prog = 0;
+  const pi = setInterval(() => { prog = Math.min(prog + Math.random()*7, 85); progressFill.style.width = prog+'%'; }, 400);
+  const msgs = ['Analisi ecommerce fashion…','Monitoraggio competitor…','Raccolta notizie tech…','Elaborazione…','Sintesi in corso…'];
+  let mi = 0;
+  const si = setInterval(() => { statusMsg.textContent = '✦ ' + msgs[++mi % msgs.length]; }, 2200);
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1500,
+        system: buildSystemPrompt(activeCats),
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        messages: [{ role: 'user', content: `Genera il briefing per oggi, ${formatDate(new Date())}. Usa web search per trovare notizie reali degli ultimi giorni.` }]
+      })
+    });
+
+    clearInterval(pi); clearInterval(si);
+    const data = await res.json();
+
+    let rawText = '';
+    (data.content || []).forEach(b => { if (b.type === 'text') rawText += b.text; });
+
+    const clean = rawText.replace(/```json|```/g,'').trim();
+    let parsed;
+    try { parsed = JSON.parse(clean); }
+    catch { const m = clean.match(/\{[\s\S]*\}/); if (m) parsed = JSON.parse(m[0]); else throw new Error('Formato non valido'); }
+
+    progressFill.style.width = '100%';
+    statusMsg.textContent = `✦ ${parsed.notizie.length} notizie trovate`;
+
+    setTimeout(() => {
+      progressWrap.style.display = 'none';
+      statusMsg.style.display = 'none';
+      renderNews(parsed.notizie, newsList);
+      saveToHistory(parsed.notizie, activeCats);
+      showToast(`Report pronto · ${parsed.notizie.length} notizie`);
+    }, 500);
+
+  } catch (err) {
+    clearInterval(pi); clearInterval(si);
+    progressWrap.style.display = 'none'; statusMsg.style.display = 'none';
+    newsList.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><p>Errore nella generazione.<br><small style="color:var(--muted)">${err.message}</small></p></div>`;
+    showToast('Errore — riprova');
+  } finally {
+    btn.disabled = false; btn.classList.remove('loading');
+    btnText.textContent = 'Aggiorna report';
+  }
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  const q = (document.getElementById('historySearchInput')?.value || '').toLowerCase();
+  let h = getHistory();
+  if (q) h = h.filter(item =>
+    item.full.toLowerCase().includes(q) ||
+    item.data.some(n => n.titolo.toLowerCase().includes(q) || n.sintesi.toLowerCase().includes(q))
+  );
+  if (!h.length) {
+    list.innerHTML = `<div class="empty-state"><div class="icon">🗂</div><p>${q ? 'Nessun risultato.' : 'Nessun report salvato.'}</p></div>`;
+    return;
+  }
+  list.innerHTML = h.map((item, i) => {
+    const pills = (item.cats||[]).slice(0,4).map(c =>
+      `<span class="news-tag tag-${c}" style="font-size:9px;padding:2px 6px">${ALL_CATS[c]?.label||c}</span>`
+    ).join('');
+    return `<div class="history-item" onclick="viewHistoryItem(${i})">
+      <div style="flex:1">
+        <div class="history-item-date">${item.full}</div>
+        <div class="history-item-pills" style="margin-top:5px">${pills}</div>
+        <div class="history-item-count">${item.data.length} notizie</div>
+      </div>
+      <div class="history-item-arrow">›</div>
+    </div>`;
+  }).join('');
+}
+
+function viewHistoryItem(i) {
+  const q = (document.getElementById('historySearchInput')?.value || '').toLowerCase();
+  let h = getHistory();
+  if (q) h = h.filter(item =>
+    item.full.toLowerCase().includes(q) ||
+    item.data.some(n => n.titolo.toLowerCase().includes(q) || n.sintesi.toLowerCase().includes(q))
+  );
+  if (!h[i]) return;
+  document.getElementById('heroTitle').textContent = h[i].full;
+  switchView('today');
+  renderNews(h[i].data, document.getElementById('newsList'));
+}
+
+async function requestNotifications() {
+  if (!('Notification' in window)) { showToast('Notifiche non supportate'); return; }
+  const p = await Notification.requestPermission();
+  if (p === 'granted') { showToast('🔔 Notifiche attivate!'); scheduleNotification(); savePref('notifOn', true); }
+  else showToast('Permesso notifiche negato');
+}
+function scheduleNotification() {
+  const timeStr = document.getElementById('notifTime').value || '08:00';
+  const [h, m] = timeStr.split(':').map(Number);
+  const target = new Date(); target.setHours(h, m, 0, 0);
+  if (target <= new Date()) target.setDate(target.getDate()+1);
+  setTimeout(() => new Notification('Fashion Briefing 📰', { body: 'Il tuo briefing moda è pronto!', icon: 'icon-192.svg' }), target - new Date());
+  showToast(`Notifica programmata alle ${timeStr}`);
+}
+
+// Boot
+initSettings();
+renderActivePills();
+document.getElementById('savedCount').textContent = getHistory().length;
+</script>
+</body>
+</html>
