@@ -6,7 +6,6 @@ exports.handler = async (event) => {
   const apiKey = process.env.GEMINI_API_KEY;
   const body = JSON.parse(event.body);
 
-  // Estrai system prompt e messaggio utente dal formato Anthropic
   const systemPrompt = body.system || '';
   const userMessage = body.messages?.[0]?.content || '';
 
@@ -16,8 +15,7 @@ exports.handler = async (event) => {
     generationConfig: {
       temperature: 0.7,
       maxOutputTokens: 1500,
-    },
-    tools: [{ google_search: {} }]
+    }
   };
 
   const response = await fetch(
@@ -31,7 +29,9 @@ exports.handler = async (event) => {
 
   const data = await response.json();
 
-  // Estrai il testo dalla risposta Gemini
+  // Log per debug
+  console.log('Gemini raw response:', JSON.stringify(data));
+
   let text = '';
   try {
     text = data.candidates?.[0]?.content?.parts
@@ -39,10 +39,10 @@ exports.handler = async (event) => {
       ?.map(p => p.text)
       ?.join('') || '';
   } catch (e) {
+    console.log('Parse error:', e);
     text = '';
   }
 
-  // Restituisci nel formato che si aspetta index.html
   const anthropicStyleResponse = {
     content: [{ type: 'text', text }]
   };
